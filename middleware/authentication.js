@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const userModel = require("../models/userModel");
+const UserModel = require("../models/userModel");
 
 const authenticate = async (req, res, next) => {
   const token = req.header("Authorization");
@@ -9,9 +9,12 @@ const authenticate = async (req, res, next) => {
   }
 
   try {
-    const user = jwt.verify(token, process.env.TOKEN_SECRET);
-    const userData = await userModel.findByPk(user.userId);
+    const decodedToken = jwt.verify(token, process.env.TOKEN_SECRET);
+    const userData = await UserModel.findById(decodedToken.userId);
     // console.log("userData" + userData);
+    if (!userData) {
+      return res.status(401).json({ message: "Unauthorized: User not found" });
+    }
     req.user = userData;
     next();
   } catch (err) {

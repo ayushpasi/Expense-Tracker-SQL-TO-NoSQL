@@ -56,6 +56,7 @@ const postUserLogin = async (req, res) => {
   const { email, password } = req.body;
   try {
     const existingUser = await UserModel.findOne({ email: email });
+
     if (existingUser) {
       bcrypt.compare(password, existingUser.password, (err, result) => {
         if (err) {
