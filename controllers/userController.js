@@ -19,24 +19,27 @@ const postUserSignUp = async (req, res) => {
   }
 
   try {
-    const existingUser = await UserModel.findOne({ where: { email: email } });
+    const existingUser = await UserModel.findOne({ email: email });
 
     if (existingUser) {
       return res.status(409).json({
         error: "This email is already taken. Please choose another one.",
       });
     }
-    bcrypt.hash(password, 10, async (err, hash) => {
-      console.log(err);
-      // Only create a new user if all required data is present and the email doesn't exist
-      const newUser = await UserModel.create({
-        name,
-        email,
-        password: hash,
-      });
 
-      res.status(200).json({ message: "Registered successfully!" });
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create new user
+    const newUser = new UserModel({
+      name,
+      email,
+      password: hashedPassword,
     });
+
+    await newUser.save();
+    console.log("succesfull");
+    res.status(200).json({ message: "Registered successfully!" });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: "Internal server error" });
@@ -52,15 +55,15 @@ const generateAccessToken = (id, name, isPremiumUser) => {
 const postUserLogin = async (req, res) => {
   const { email, password } = req.body;
   try {
-    const existingUser = await UserModel.findOne({ where: { email: email } });
+    const existingUser = await UserModel.findOne({ email: email });
     if (existingUser) {
       bcrypt.compare(password, existingUser.password, (err, result) => {
         if (err) {
-          res.status(500).json({ error: "somthing went wrong" });
+          res.status(500).json({ error: "something went wrong" });
         }
-        if (result == true) {
+        if (result === true) {
           res.status(200).json({
-            message: "user logged in succesfully",
+            message: "user logged in successfully",
             token: generateAccessToken(
               existingUser.id,
               existingUser.name,
@@ -76,8 +79,10 @@ const postUserLogin = async (req, res) => {
     }
   } catch (err) {
     console.log(err);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
 module.exports = {
   postUserSignUp,
   getLoginPage,

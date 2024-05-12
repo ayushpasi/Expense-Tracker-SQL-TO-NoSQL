@@ -9,7 +9,7 @@ const path = require("path");
 
 const fs = require("fs");
 
-// const userRouter = require("./routes/userRouter");
+const userRouter = require("./routes/userRouter");
 const mongoose = require("mongoose");
 // const expenseRouter = require("./routes/expenseRouter");
 
@@ -38,8 +38,8 @@ app.use(express.static("public"));
 app.use(cors());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
-// app.use("/", userRouter);
-// app.use("/user", userRouter);
+app.use("/", userRouter);
+app.use("/user", userRouter);
 // app.use("/homePage", expenseRouter);
 // app.use("/expense", userauthentication.authenticate, expenseRouter);
 // app.use("/purchase", purchaseMembershipRouter);
