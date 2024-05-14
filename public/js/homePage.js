@@ -8,19 +8,19 @@ const form = document.getElementById("my-form");
 form.addEventListener("submit", addNewExpense);
 
 const token = localStorage.getItem("token");
-
 function addRowsToTable(expense) {
   var tbody = document.getElementById("expenseTableBody");
   var tableContent = "";
   const stringifiedExpense = JSON.stringify(expense);
-  tableContent += `<tr>
-    <td>${expense.date}</td>
+
+  tableContent += `<tr class="trStyle">
+    <td >${expense.date}</td>
     <td>${expense.expenseAmount}</td>
     <td>${expense.expenseDescription}</td>
     <td>${expense.expenseCategory}</td>
     <td>
-    <button class="btn btn-danger" onclick="deleteRow(this, ${expense.id})">
-    <i class="bi bi-trash"></i> 
+    <button class="btn btn-danger" onclick="deleteRow(this, '${expense._id}')">
+    <i class="bi bi-trash"></i>
   </button>
   <button class="btn btn-primary" onclick="updateRow(this)" data-expense='${stringifiedExpense}'>
   <i class="bi bi-pencil-square"></i> Update
@@ -34,13 +34,14 @@ function addRowsToTable(expense) {
 function updateRow(btn) {
   const stringifiedExpense = btn.getAttribute("data-expense");
   const expense = JSON.parse(stringifiedExpense);
-  const { id, expenseAmount, expenseCategory, expenseDescription } = expense;
+  const { _id, expenseAmount, expenseCategory, expenseDescription } = expense;
 
   document.getElementById("expenseAmount").value = expenseAmount;
   document.getElementById("expenseCategory").value = expenseCategory;
   document.getElementById("expenseDescription").value = expenseDescription;
 
   const form = document.getElementById("my-form");
+
   form.removeEventListener("submit", addNewExpense);
 
   form.addEventListener("submit", async function (event) {
@@ -60,14 +61,14 @@ function updateRow(btn) {
 
     try {
       const response = await axios.put(
-        `/expense/editExpense/${id}`,
+        `http://localhost:3000/expense/editExpense/${_id}`,
         updatedFormData,
         { headers: { Authorization: token } }
       );
 
       console.log("Expense updated successfully:", response.data);
 
-      document.getElementById("my-form").reset();
+      form.reset();
       window.location.reload();
 
       form.removeEventListener("submit", arguments.callee);
@@ -78,21 +79,23 @@ function updateRow(btn) {
   });
 }
 
+// // Functions for delete and update
 // Functions for delete and update
 async function deleteRow(btn, expenseId) {
+  console.log(expenseId);
+  var row = btn.parentNode.parentNode;
+  row.parentNode.removeChild(row);
   try {
-    const response = await axios.delete(`/expense/deleteExpense/${expenseId}`, {
-      headers: { Authorization: token },
-    });
+    const response = await axios.delete(
+      `http://localhost:3000/expense/deleteExpense/${expenseId}`,
+      { headers: { Authorization: token } }
+    );
     console.log("Expense deleted:", response.data);
     // Handle success if needed
   } catch (error) {
     console.error("Error deleting expense:", error);
     // Handle error if needed
   }
-  console.log(expenseId);
-  var row = btn.parentNode.parentNode;
-  row.parentNode.removeChild(row);
 }
 
 async function addNewExpense(e) {
@@ -135,9 +138,11 @@ async function addNewExpense(e) {
   };
 
   try {
-    const response = await axios.post("/expense/addExpense", expense, {
-      headers: { Authorization: token },
-    });
+    const response = await axios.post(
+      "http://localhost:3000/expense/addExpense",
+      expense,
+      { headers: { Authorization: token } }
+    );
     console.log(response.data.expense);
     // Assuming the server sends back the newly created expense
     addRowsToTable(response.data.expense);
@@ -178,99 +183,101 @@ window.addEventListener("DOMContentLoaded", () => {
   const limit = parseInt(document.getElementById("rowsPerPage").value);
   getAllExpenses(1, limit);
 });
-buyPremiumBtn.addEventListener("click", buyPremium);
-async function buyPremium(e) {
-  const token = localStorage.getItem("token");
-  const res = await axios.get(" /purchase/premiumMembership", {
-    headers: { Authorization: token },
-  });
-  var options = {
-    key: res.data.key_id, // Enter the Key ID generated from the Dashboard
-    order_id: res.data.order.id, // For one time payment
-    // This handler function will handle the success payment
-    handler: async function (response) {
-      const res = await axios.post(
-        " /purchase/updateTransactionStatus",
-        {
-          order_id: options.order_id,
-          payment_id: response.razorpay_payment_id,
-        },
-        { headers: { Authorization: token } }
-      );
-      console.log(res);
+// buyPremiumBtn.addEventListener("click", buyPremium);
+// async function buyPremium(e) {
+//   const token = localStorage.getItem("token");
+//   const res = await axios.get(
+//     "http://localhost:3000/purchase/premiumMembership",
+//     { headers: { Authorization: token } }
+//   );
+//   var options = {
+//     key: res.data.key_id, // Enter the Key ID generated from the Dashboard
+//     order_id: res.data.order.id, // For one time payment
+//     // This handler function will handle the success payment
+//     handler: async function (response) {
+//       const res = await axios.post(
+//         "http://localhost:3000/purchase/updateTransactionStatus",
+//         {
+//           order_id: options.order_id,
+//           payment_id: response.razorpay_payment_id,
+//         },
+//         { headers: { Authorization: token } }
+//       );
+//       console.log(res);
 
-      alert(
-        "Welcome to our Premium Membership, You have now access to Reports and LeaderBoard"
-      );
-      window.location.reload();
+//       alert(
+//         "Welcome to our Premium Membership, You have now access to Reports and LeaderBoard"
+//       );
+//       window.location.reload();
 
-      localStorage.setItem("token", res.data.token);
-    },
-  };
-  const rzp1 = new Razorpay(options);
-  rzp1.open();
-  e.preventDefault();
+//       localStorage.setItem("token", res.data.token);
+//     },
+//   };
+//   const rzp1 = new Razorpay(options);
+//   rzp1.open();
+//   e.preventDefault();
 
-  rzp1.on("payment.failed", (response) => {
-    console.log(response.error.code);
-    console.log(response.error.description);
-    alert(`Something went wrong`);
-  });
-}
+//   rzp1.on("payment.failed", (response) => {
+//     console.log(response.error.code);
+//     console.log(response.error.description);
+//     alert(`Something went wrong`);
+//   });
+// }
 
-// Function to fetch leaderboard data using Axios
-async function fetchLeaderboardData() {
-  try {
-    const response = await axios.get(" /premium/showLeaderBoard", {
-      headers: { Authorization: token },
-    });
-    return response.data.userLeaderboardDetails;
-  } catch (error) {
-    console.error("Error fetching leaderboard:", error);
-    return [];
-  }
-}
+// // Function to fetch leaderboard data using Axios
+// async function fetchLeaderboardData() {
+//   try {
+//     const response = await axios.get(
+//       "http://localhost:3000/premium/showLeaderBoard",
+//       { headers: { Authorization: token } }
+//     );
+//     return response.data.userLeaderboardDetails;
+//   } catch (error) {
+//     console.error("Error fetching leaderboard:", error);
+//     return [];
+//   }
+// }
 
-// Display leaderboard function
-async function displayLeaderboard() {
-  const leaderboardButton = document.getElementById("showLeaderBoard");
-  leaderboardButton.style.display = "block";
+// // Display leaderboard function
+// async function displayLeaderboard() {
+//   const leaderboardButton = document.getElementById("showLeaderBoard");
+//   leaderboardButton.style.display = "block";
 
-  leaderboardButton.addEventListener("click", async () => {
-    document.getElementById("leaderboardContainer").style.display = "block";
-    const leaderboardBody = document.getElementById("leaderboardBody");
-    leaderboardBody.innerHTML = ""; // Clear previous content
+//   leaderboardButton.addEventListener("click", async () => {
+//     document.getElementById("leaderboardContainer").style.display = "block";
+//     const leaderboardBody = document.getElementById("leaderboardBody");
+//     leaderboardBody.innerHTML = ""; // Clear previous content
 
-    try {
-      const userLeaderboardDetails = await fetchLeaderboardData();
+//     try {
+//       const userLeaderboardDetails = await fetchLeaderboardData();
 
-      userLeaderboardDetails.forEach((user, index) => {
-        const row = document.createElement("tr");
+//       userLeaderboardDetails.forEach((user, index) => {
+//         const row = document.createElement("tr");
 
-        const rankCell = document.createElement("td");
-        rankCell.textContent = index + 1;
+//         const rankCell = document.createElement("td");
+//         rankCell.textContent = index + 1;
 
-        const nameCell = document.createElement("td");
-        nameCell.textContent = user.name;
+//         const nameCell = document.createElement("td");
+//         nameCell.textContent = user.name;
 
-        const costCell = document.createElement("td");
-        costCell.textContent = user.totalExpense;
+//         const costCell = document.createElement("td");
+//         costCell.textContent = user.totalExpense;
 
-        row.appendChild(rankCell);
-        row.appendChild(nameCell);
-        row.appendChild(costCell);
+//         row.appendChild(rankCell);
+//         row.appendChild(nameCell);
+//         row.appendChild(costCell);
 
-        leaderboardBody.appendChild(row);
-      });
-      leaderboardButton.style.display = "none";
-    } catch (error) {
-      console.error("Error displaying leaderboard:", error);
-    }
-  });
+//         leaderboardBody.appendChild(row);
+//       });
+//       leaderboardButton.style.display = "none";
+//     } catch (error) {
+//       console.error("Error displaying leaderboard:", error);
+//     }
+//   });
 
-  // Add the button to the DOM
-  document.body.appendChild(leaderboardButton);
-}
+//   // Add the button to the DOM
+//   document.body.appendChild(leaderboardButton);
+// }
 
 document.getElementById("rowsPerPage").addEventListener("change", function () {
   const limit = parseInt(this.value);
@@ -281,7 +288,7 @@ async function getAllExpenses(pageNo, limit) {
   try {
     const token = localStorage.getItem("token");
     const res = await axios.get(
-      ` /expense/getAllExpenses/${pageNo}?limit=${limit}`,
+      `http://localhost:3000/expense/getAllExpenses/${pageNo}?limit=${limit}`,
       { headers: { Authorization: token } }
     );
 

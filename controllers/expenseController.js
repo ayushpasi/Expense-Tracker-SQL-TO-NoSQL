@@ -3,6 +3,7 @@ const UserModel = require("../models/userModel");
 const sequelize = require("../util/database");
 const Userservices = require("../services/userservices");
 const S3services = require("../services/S3services");
+const mongoose = require("mongoose");
 const path = require("path");
 const { where } = require("sequelize");
 const downloadExpenses = async (req, res) => {
@@ -32,41 +33,33 @@ const downloadExpenses = async (req, res) => {
 
 //save data to database
 const addExpense = async (req, res, next) => {
-  const t = await sequelize.transaction();
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
-    const date = req.body.date;
-    const expenseAmount = req.body.expenseAmount;
-    const expenseDescription = req.body.expenseDescription;
-    const expenseCategory = req.body.expenseCategory;
+    const { date, expenseAmount, expenseDescription, expenseCategory } =
+      req.body;
+    // console.log(`user id ${req.user.id}`);
+    const expense = new ExpenseModel({
+      date,
+      expenseAmount,
+      expenseDescription,
+      expenseCategory,
+      userId: req.user.id,
+    });
 
-    const data = await ExpenseModel.create(
-      {
-        date: date,
-        expenseAmount: expenseAmount,
-        expenseDescription: expenseDescription,
-        expenseCategory: expenseCategory,
-        userId: req.user.id,
-      },
-      { transaction: t }
-    );
+    await expense.save({ session });
 
-    const newTotalExpense =
-      parseInt(req.user.totalExpense) + parseInt(expenseAmount);
+    const user = await UserModel.findById(req.user.id).session(session);
+    user.totalExpense += parseInt(expenseAmount);
+    await user.save({ session });
 
-    await UserModel.update(
-      {
-        totalExpense: newTotalExpense,
-      },
-      {
-        where: { id: req.user.id },
-        transaction: t, // Pass the transaction object here
-      }
-    );
+    await session.commitTransaction();
+    session.endSession();
 
-    await t.commit();
-    res.status(201).json({ expense: data });
+    res.status(201).json({ expense });
   } catch (error) {
-    await t.rollback();
+    await session.abortTransaction();
+    session.endSession();
     console.error(error);
     res.status(500).json({
       error: "Failed to create a new expense",
@@ -75,94 +68,76 @@ const addExpense = async (req, res, next) => {
   }
 };
 //fetch all expenses
-const getAllExpenses = async (req, res, next) => {
-  try {
-    const expenses = await ExpenseModel.findAll({
-      where: { userId: req.user.id },
-    });
-    res.status(200).json(expenses);
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({
-      err: err,
-    });
-  }
-};
-
+// const getAllExpenses = async (req, res, next) => {
+//   try {
+//     const expenses = await ExpenseModel.find({ userId: req.user.id });
+//     console.log(expenses);
+//     res.status(200).json(expenses);
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ error: "Failed to fetch expenses" });
+//   }
+// };
 //expenses pagination
 const getAllExpensesforPagination = async (req, res) => {
   try {
-    const pageNo = req.params.page;
+    const pageNo = parseInt(req.params.page);
     const limit = parseInt(req.query.limit || 10);
-    const offset = (pageNo - 1) * limit;
+    const skip = (pageNo - 1) * limit;
 
-    const totalExpenses = await ExpenseModel.count({
-      where: {
-        userId: req.user.id,
-      },
+    const totalExpenses = await ExpenseModel.countDocuments({
+      userId: req.user.id,
     });
     const totalPages = Math.ceil(totalExpenses / limit);
 
-    const expenses = await ExpenseModel.findAll({
-      where: {
-        userId: req.user.id,
-      },
-      offset: offset,
-      limit: limit,
-    });
-
-    res.status(200).json({ expenses: expenses, totalPages: totalPages });
+    const expenses = await ExpenseModel.find({ userId: req.user.id })
+      .skip(skip)
+      .limit(limit);
+    // console.log(`expenses >>>>${expenses}`);
+    res.status(200).json({ expenses, totalPages });
   } catch (error) {
-    console.log(error);
+    console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
-//delete user
+//delete expense
 const deleteExpense = async (req, res, next) => {
-  const t = await sequelize.transaction();
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
-    const expenseId = req.params.id; // Use expenseId instead of userId
-    // console.log(expenseId);
+    const expenseId = req.params.id;
+    console.log(`DELETE ID ${expenseId}`);
     if (!expenseId) {
+      await session.abortTransaction();
+      session.endSession();
       return res.status(400).json({
         error: "Expense ID missing",
       });
     }
 
-    // Check if the expense exists for the given ID
-    const expense = await ExpenseModel.findOne({
-      where: {
-        id: expenseId,
-      },
-      transaction: t,
-    });
-
+    const expense = await ExpenseModel.findById(expenseId).session(session);
+    console.log(`expense ${expense}`);
     if (!expense) {
-      await t.rollback();
+      await session.abortTransaction();
+      session.endSession();
       return res.status(404).json({
         error: "Expense not found",
       });
     }
 
-    // Delete the expense
-    const deleteResult = await ExpenseModel.destroy({
-      where: {
-        id: expenseId,
-      },
-      transaction: t,
-    });
+    const deleteResult = await ExpenseModel.deleteOne({
+      _id: expenseId,
+    }).session(session);
 
-    // Update total expense of the user
-    const newTotalExpense = req.user.totalExpense - expense.expenseAmount;
-    await req.user.update(
-      { totalExpense: newTotalExpense },
-      { transaction: t }
-    );
+    const user = req.user;
+    user.totalExpense -= expense.expenseAmount;
+    await user.save({ session });
 
-    await t.commit();
+    await session.commitTransaction();
+    session.endSession();
 
-    if (deleteResult === 1) {
+    if (deleteResult.deletedCount === 1) {
       return res.status(200).json({
         success: "Expense deleted successfully",
       });
@@ -172,7 +147,8 @@ const deleteExpense = async (req, res, next) => {
       });
     }
   } catch (err) {
-    await t.rollback();
+    await session.abortTransaction();
+    session.endSession();
     console.error(err);
     res.status(500).json({
       error: "Error in deleting expense",
@@ -191,31 +167,36 @@ const getHomePage = async (req, res, next) => {
 
 const editExpense = async (req, res, next) => {
   try {
-    const id = req.params.id;
+    const _id = req.params.id;
+    // console.log("_id:>>>>>>>", _id);
     const category = req.body.expenseCategory;
     const description = req.body.expenseDescription;
     const amount = req.body.expenseAmount;
-    // console.log("expense id" + id);
-    // console.log(req.user.id);
-    const expense = await ExpenseModel.findByPk(id);
+    const userId = req.user._id;
+    const expense = await ExpenseModel.findById(_id);
+    console.log(expense);
+    if (!expense) {
+      return res.status(404).json({ message: "Expense not found" });
+    }
+
     const newTotalExpense =
       parseInt(req.user.totalExpense) -
       parseInt(expense.expenseAmount) +
       parseInt(amount);
 
-    await UserModel.update(
-      { totalExpense: newTotalExpense },
-      { where: { id: req.user.id } }
-    );
+    // Update totalExpense in the user document
+    await UserModel.findByIdAndUpdate(userId, {
+      totalExpense: newTotalExpense,
+    });
 
-    await ExpenseModel.update(
-      {
-        expenseCategory: category,
-        expenseDescription: description,
-        expenseAmount: amount,
-      },
-      { where: { id: id, userId: req.user.id } }
-    );
+    // Update expense document
+    await ExpenseModel.findByIdAndUpdate(_id, {
+      // Changed id to _id
+      expenseCategory: category,
+      expenseDescription: description,
+      expenseAmount: amount,
+    });
+
     res.status(200).json({ message: "updated succesfully" });
   } catch (err) {
     console.error(err);
@@ -225,7 +206,6 @@ const editExpense = async (req, res, next) => {
 
 module.exports = {
   addExpense,
-  getAllExpenses,
   deleteExpense,
   downloadExpenses,
   getAllExpensesforPagination,

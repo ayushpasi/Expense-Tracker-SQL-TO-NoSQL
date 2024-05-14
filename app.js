@@ -11,14 +11,14 @@ const fs = require("fs");
 
 const userRouter = require("./routes/userRouter");
 const mongoose = require("mongoose");
-// const expenseRouter = require("./routes/expenseRouter");
+const expenseRouter = require("./routes/expenseRouter");
 
 // const Expense = require("./models/expenseModel");
 // const User = require("./models/userModel");
 // const Order = require("./models/ordersModel");
 // const ResetPassword = require("./models/resetPasswordModel");
 
-// const userauthentication = require("./middleware/authentication");
+const userauthentication = require("./middleware/authentication");
 // const purchaseMembershipRouter = require("./routes/purchaseMembershipRouter");
 // const premiumFeatureRouter = require("./routes/premiumFeatureRouter");
 
@@ -40,8 +40,8 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use("/", userRouter);
 app.use("/user", userRouter);
-// app.use("/homePage", expenseRouter);
-// app.use("/expense", userauthentication.authenticate, expenseRouter);
+app.use("/homePage", expenseRouter);
+app.use("/expense", userauthentication.authenticate, expenseRouter);
 // app.use("/purchase", purchaseMembershipRouter);
 // app.use("/premium", premiumFeatureRouter);
 

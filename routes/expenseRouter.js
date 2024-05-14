@@ -5,7 +5,7 @@ router.use(express.static("public"));
 
 router.get("/", expenseController.getHomePage);
 
-router.get("/getAllExpenses", expenseController.getAllExpenses);
+// router.get("/getAllExpenses", expenseController.getAllExpenses);
 
 router.delete("/deleteExpense/:id", expenseController.deleteExpense);
 
