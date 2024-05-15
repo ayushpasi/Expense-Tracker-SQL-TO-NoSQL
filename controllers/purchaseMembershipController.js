@@ -1,27 +1,37 @@
-const Rozarpay = require("razorpay");
-const orderModel = require("../models/ordersModel");
+const Razorpay = require("razorpay");
+const Order = require("../models/ordersModel");
 const userController = require("./userController");
 
 const purchasepremium = async (req, res) => {
   try {
-    var rzp = new Rozarpay({
+    const rzp = new Razorpay({
       key_id: process.env.RAZORPAY_KEY_ID,
       key_secret: process.env.RAZORPAY_KEY_SECRET,
     });
     const amount = 2500;
 
-    rzp.orders.create({ amount, currency: "INR" }, (err, order) => {
+    rzp.orders.create({ amount, currency: "INR" }, async (err, order) => {
       if (err) {
-        throw new Error(JSON.stringify(err));
+        return res
+          .status(500)
+          .json({ message: "Razorpay order creation failed1", error: err });
       }
-      req.user
-        .createOrder({ orderid: order.id, status: "PENDING" })
-        .then(() => {
-          return res.status(201).json({ order, key_id: rzp.key_id });
-        })
-        .catch((err) => {
-          throw new Error(err);
-        });
+
+      const newOrder = new Order({
+        paymentid: null,
+        orderid: order.id,
+        status: "PENDING",
+        userId: req.user._id, // Assuming req.user is populated with the logged-in user
+      });
+
+      try {
+        await newOrder.save();
+        return res.status(201).json({ order, key_id: rzp.key_id });
+      } catch (saveError) {
+        return res
+          .status(500)
+          .json({ message: "Order creation failed", error: saveError });
+      }
     });
   } catch (err) {
     console.log(err);
@@ -32,28 +42,34 @@ const purchasepremium = async (req, res) => {
 const updateTransactionStatus = async (req, res) => {
   try {
     const { payment_id, order_id } = req.body;
-    // console.log("payentId>>>>" + payment_id);
-    const order = await orderModel.findOne({ where: { orderid: order_id } });
-    const promise1 = order.update({ paymentid: payment_id });
-    const promise2 = req.user.update({ isPremiumUser: true });
-    Promise.all([promise1, promise2])
-      .then(() => {
-        return res.status(202).json({
-          sucess: true,
-          message: "Transaction Successful",
-          token: userController.generateAccessToken(
-            req.user.id,
-            req.user.name,
-            true
-          ),
-        });
-      })
-      .catch((error) => {
-        throw new Error(error);
-      });
+
+    const order = await Order.findOne({ orderid: order_id });
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    order.paymentid = payment_id;
+    await order.save();
+
+    req.user.isPremiumUser = true;
+    await req.user.save();
+
+    const token = userController.generateAccessToken(
+      req.user.id,
+      req.user.name,
+      true
+    );
+
+    return res.status(202).json({
+      success: true,
+      message: "Transaction Successful",
+      token: token,
+    });
   } catch (err) {
-    console.log(err);
-    res.status(403).json({ error: err, message: "Sometghing went wrong" });
+    console.error(err);
+    res
+      .status(500)
+      .json({ error: err.message, message: "Something went wrong" });
   }
 };
 

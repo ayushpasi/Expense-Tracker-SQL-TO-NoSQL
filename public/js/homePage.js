@@ -183,46 +183,45 @@ window.addEventListener("DOMContentLoaded", () => {
   const limit = parseInt(document.getElementById("rowsPerPage").value);
   getAllExpenses(1, limit);
 });
-// buyPremiumBtn.addEventListener("click", buyPremium);
-// async function buyPremium(e) {
-//   const token = localStorage.getItem("token");
-//   const res = await axios.get(
-//     "http://localhost:3000/purchase/premiumMembership",
-//     { headers: { Authorization: token } }
-//   );
-//   var options = {
-//     key: res.data.key_id, // Enter the Key ID generated from the Dashboard
-//     order_id: res.data.order.id, // For one time payment
-//     // This handler function will handle the success payment
-//     handler: async function (response) {
-//       const res = await axios.post(
-//         "http://localhost:3000/purchase/updateTransactionStatus",
-//         {
-//           order_id: options.order_id,
-//           payment_id: response.razorpay_payment_id,
-//         },
-//         { headers: { Authorization: token } }
-//       );
-//       console.log(res);
+buyPremiumBtn.addEventListener("click", buyPremium);
+async function buyPremium(e) {
+  const token = localStorage.getItem("token");
+  const res = await axios.get(
+    "http://localhost:3000/purchase/premiumMembership",
+    { headers: { Authorization: token } }
+  );
 
-//       alert(
-//         "Welcome to our Premium Membership, You have now access to Reports and LeaderBoard"
-//       );
-//       window.location.reload();
+  var options = {
+    key: res.data.key_id, // Enter the Key ID generated from the Dashboard
+    order_id: res.data.order.id, // For one time payment
+    // This handler function will handle the success payment
+    handler: async function (response) {
+      const res = await axios.post(
+        "http://localhost:3000/purchase/updateTransactionStatus",
+        {
+          order_id: options.order_id,
+          payment_id: response.razorpay_payment_id,
+        },
+        { headers: { Authorization: token } }
+      );
+      alert(
+        "Welcome to our Premium Membership, You have now access to Reports and LeaderBoard"
+      );
+      window.location.reload();
 
-//       localStorage.setItem("token", res.data.token);
-//     },
-//   };
-//   const rzp1 = new Razorpay(options);
-//   rzp1.open();
-//   e.preventDefault();
+      localStorage.setItem("token", res.data.token);
+    },
+  };
+  const rzp1 = new Razorpay(options);
+  rzp1.open();
+  e.preventDefault();
 
-//   rzp1.on("payment.failed", (response) => {
-//     console.log(response.error.code);
-//     console.log(response.error.description);
-//     alert(`Something went wrong`);
-//   });
-// }
+  rzp1.on("payment.failed", (response) => {
+    console.log(response.error.code);
+    console.log(response.error.description);
+    alert(`Something went wrong`);
+  });
+}
 
 // // Function to fetch leaderboard data using Axios
 // async function fetchLeaderboardData() {
