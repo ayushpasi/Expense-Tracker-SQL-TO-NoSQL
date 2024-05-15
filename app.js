@@ -22,7 +22,7 @@ const userauthentication = require("./middleware/authentication");
 // const purchaseMembershipRouter = require("./routes/purchaseMembershipRouter");
 // const premiumFeatureRouter = require("./routes/premiumFeatureRouter");
 
-// const resetPasswordRouter = require("./routes/resetPasswordRouter");
+const resetPasswordRouter = require("./routes/resetPasswordRouter");
 
 // const accessLogStream = fs.createWriteStream(
 //   path.join(__dirname, "access.log"),
@@ -45,7 +45,7 @@ app.use("/expense", userauthentication.authenticate, expenseRouter);
 // app.use("/purchase", purchaseMembershipRouter);
 // app.use("/premium", premiumFeatureRouter);
 
-// app.use("/password", resetPasswordRouter);
+app.use("/password", resetPasswordRouter);
 
 // User.hasMany(Expense);
 // Expense.belongsTo(User);

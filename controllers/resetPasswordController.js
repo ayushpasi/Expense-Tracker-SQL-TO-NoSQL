@@ -19,20 +19,24 @@ const sendMail = async (req, res) => {
   try {
     const requestId = uuid.v4();
     const { email } = req.body;
-    const recepientEmail = await UserModel.findOne({ where: { email: email } });
-    // console.log(recepientEmail);
+
+    const recepientEmail = await UserModel.findOne({ email: email });
+
     if (!recepientEmail) {
       return res
         .status(404)
         .json({ message: "Please provide the registered email!" });
     }
-    const resetRequest = await ResetPassword.create({
+
+    const resetRequest = new ResetPassword({
       id: requestId,
       isActive: true,
-      userId: recepientEmail.dataValues.id,
+      userId: recepientEmail._id,
     });
-    const client = Sib.ApiClient.instance;
 
+    await resetRequest.save();
+
+    const client = Sib.ApiClient.instance;
     const apiKey = client.authentications["api-key"];
     apiKey.apiKey = process.env.API_KEY;
 
@@ -56,20 +60,21 @@ const sendMail = async (req, res) => {
       htmlContent: `
         <p>Hello,</p>
         <p>Please follow the link to reset your password.</p>
-        <p><a href="${process.env.WEBSITE}/password/resetPasswordPage/{{params.requestId}}">Reset Password</a></p>
+        <p><a href="${process.env.WEBSITE}/password/resetPasswordPage/${requestId}">Reset Password</a></p>
         <p>If you did not request this, please ignore this email.</p>
       `,
       params: {
         requestId: requestId,
       },
     });
+
     return res.status(200).json({
       message:
         "Link for reset the password is successfully send on your Mail Id!",
     });
   } catch (error) {
-    console.log(error);
-    return res.status(409).json({ message: "failed changing password" });
+    console.error(error);
+    return res.status(409).json({ message: "Failed changing password" });
   }
 };
 
@@ -83,27 +88,31 @@ const resetPasswordPage = async (req, res) => {
 
 const updatePassword = async (req, res) => {
   try {
+    console.log("UPDATE PASSWORD");
     const requestId = req.headers.referer.split("/");
     // console.log(">>>>>>", requestId);
     const password = req.body.password;
-    const checkResetRequest = await ResetPassword.findAll({
-      where: { id: requestId[requestId.length - 1], isActive: true },
-    });
+    const checkResetRequest = await ResetPassword.findOne({
+      id: requestId[requestId.length - 1],
+      isActive: true,
+    }).exec();
+    console.log(checkResetRequest);
+    if (checkResetRequest.userId) {
+      const userId = checkResetRequest.userId;
 
-    if (checkResetRequest[0]) {
-      const userId = checkResetRequest[0].dataValues.userId;
-
-      const result = await ResetPassword.update(
-        { isActive: false },
-        { where: { id: requestId } }
-      );
-      // console.log(result);
-      if (result == 1) {
+      const result = await ResetPassword.updateOne(
+        { id: requestId },
+        { $set: { isActive: false } }
+      ).exec();
+      Object.keys(result).map((i) => {
+        console.log(`${i}>>>>${result[i]}`);
+      });
+      if (result.modifiedCount == 1) {
         const newPassword = await hashPassword(password);
-        await UserModel.update(
-          { password: newPassword },
-          { where: { id: userId } }
-        );
+        await UserModel.updateOne(
+          { _id: userId },
+          { $set: { password: newPassword } }
+        ).exec();
         res
           .status(201)
           .json({ message: "Successfuly update the new password" });
