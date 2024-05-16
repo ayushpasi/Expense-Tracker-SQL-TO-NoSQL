@@ -18,7 +18,7 @@ async function displayLeaderboard() {
 
   try {
     const userLeaderboardDetails = await fetchLeaderboardData();
-
+    console.log(`userLeaderboardDetails ${userLeaderboardDetails}`);
     userLeaderboardDetails.forEach((user, index) => {
       const row = document.createElement("tr");
 

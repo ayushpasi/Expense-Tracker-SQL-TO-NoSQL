@@ -20,7 +20,7 @@ const expenseRouter = require("./routes/expenseRouter");
 
 const userauthentication = require("./middleware/authentication");
 const purchaseMembershipRouter = require("./routes/purchaseMembershipRouter");
-// const premiumFeatureRouter = require("./routes/premiumFeatureRouter");
+const premiumFeatureRouter = require("./routes/premiumFeatureRouter");
 
 const resetPasswordRouter = require("./routes/resetPasswordRouter");
 
@@ -43,7 +43,7 @@ app.use("/user", userRouter);
 app.use("/homePage", expenseRouter);
 app.use("/expense", userauthentication.authenticate, expenseRouter);
 app.use("/purchase", purchaseMembershipRouter);
-// app.use("/premium", premiumFeatureRouter);
+app.use("/premium", premiumFeatureRouter);
 
 app.use("/password", resetPasswordRouter);
 
