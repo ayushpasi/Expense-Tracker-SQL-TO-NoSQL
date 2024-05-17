@@ -5,18 +5,17 @@ const Userservices = require("../services/userservices");
 const S3services = require("../services/S3services");
 const mongoose = require("mongoose");
 const path = require("path");
-const { where } = require("sequelize");
 const downloadExpenses = async (req, res) => {
   try {
     const expenses = await Userservices.getExpenses(req);
-    // console.log(expenses);
-    //it should depend upon the userId
+
+    // it should depend upon the userId
     const user = req.user;
     const formattedExpenses = expenses.map((expense) => {
       return `Category: ${expense.expenseCategory}
-      Amount: ${expense.expenseAmount}
-      Date: ${expense.date}
-`;
+          Amount: ${expense.expenseAmount}
+          Date: ${expense.date}
+    `;
     });
     const textData = formattedExpenses.join("\n");
     const filename = `expense-data/user${user.id}/${

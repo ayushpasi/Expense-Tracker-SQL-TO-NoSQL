@@ -23,7 +23,7 @@ const uploadToS3 = async (stringifiedExpenses, filename) => {
         console.log("Something went wrong");
         reject(error);
       } else {
-        console.log("success", s3response);
+        // console.log("success", s3response);
         resolve(s3response.Location);
       }
     });

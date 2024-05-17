@@ -169,9 +169,10 @@ const download = async () => {
   const token = localStorage.getItem("token");
 
   try {
-    const response = await axios.get(" /user/download", {
+    const response = await axios.get("/user/download", {
       headers: { Authorization: token },
     });
+    console.log(response);
     if (response.status === 200) {
       var a = document.createElement("a");
       a.href = response.data.fileUrl;
