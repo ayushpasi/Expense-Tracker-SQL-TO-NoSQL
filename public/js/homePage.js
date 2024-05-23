@@ -61,7 +61,7 @@ function updateRow(btn) {
 
     try {
       const response = await axios.put(
-        `http://localhost:3000/expense/editExpense/${_id}`,
+        `/expense/edit-expense/${_id}`,
         updatedFormData,
         { headers: { Authorization: token } }
       );
@@ -87,7 +87,7 @@ async function deleteRow(btn, expenseId) {
   row.parentNode.removeChild(row);
   try {
     const response = await axios.delete(
-      `http://localhost:3000/expense/deleteExpense/${expenseId}`,
+      `/expense/delete-expense/${expenseId}`,
       { headers: { Authorization: token } }
     );
     console.log("Expense deleted:", response.data);
@@ -105,15 +105,15 @@ async function addNewExpense(e) {
   let expenseCategory = e.target.expenseCategory.value;
   if (expenseCategory == "Select Category") {
     alert("Select the Category!");
-    window.location.href("/homePage");
+    window.location.href("/home-page");
   }
   if (!expenseDescription) {
     alert("Add the Description!");
-    window.location.href("/homePage");
+    window.location.href("/home-page");
   }
   if (!parseInt(expenseAmount)) {
     alert("Please enter the valid amount!");
-    window.location.href("/homePage");
+    window.location.href("/home-page");
   }
 
   const currentDate = new Date();
@@ -138,11 +138,9 @@ async function addNewExpense(e) {
   };
 
   try {
-    const response = await axios.post(
-      "http://localhost:3000/expense/addExpense",
-      expense,
-      { headers: { Authorization: token } }
-    );
+    const response = await axios.post("/expense/add-expense", expense, {
+      headers: { Authorization: token },
+    });
     console.log(response.data.expense);
     // Assuming the server sends back the newly created expense
     addRowsToTable(response.data.expense);
@@ -176,8 +174,8 @@ window.addEventListener("DOMContentLoaded", () => {
     leaderboardLink.removeAttribute("onclick");
     leaderboardLink.innerHTML = "Leaderboard &#128142";
 
-    leaderboardLink.setAttribute("href", "/premium/getLeaderboardPage");
-    reportsLink.setAttribute("href", "/premium/getReportsPage");
+    leaderboardLink.setAttribute("href", "/premium/get-leaderboard-page");
+    reportsLink.setAttribute("href", "/premium/get-report-page");
     buyPremiumBtn.removeEventListener("click", buyPremium);
   }
   const limit = parseInt(document.getElementById("rowsPerPage").value);
@@ -187,7 +185,7 @@ buyPremiumBtn.addEventListener("click", buyPremium);
 async function buyPremium(e) {
   const token = localStorage.getItem("token");
   const res = await axios.get(
-    "http://localhost:3000/purchase/premiumMembership",
+    "http://localhost:3000/purchase/premium-membership",
     { headers: { Authorization: token } }
   );
 
@@ -197,7 +195,7 @@ async function buyPremium(e) {
     // This handler function will handle the success payment
     handler: async function (response) {
       const res = await axios.post(
-        "http://localhost:3000/purchase/updateTransactionStatus",
+        "http://localhost:3000/purchase/update-transaction-status",
         {
           order_id: options.order_id,
           payment_id: response.razorpay_payment_id,
@@ -227,7 +225,7 @@ async function buyPremium(e) {
 // async function fetchLeaderboardData() {
 //   try {
 //     const response = await axios.get(
-//       "http://localhost:3000/premium/showLeaderBoard",
+//       "http://localhost:3000/premium/show-leader-board",
 //       { headers: { Authorization: token } }
 //     );
 //     return response.data.userLeaderboardDetails;
@@ -287,7 +285,7 @@ async function getAllExpenses(pageNo, limit) {
   try {
     const token = localStorage.getItem("token");
     const res = await axios.get(
-      `http://localhost:3000/expense/getAllExpenses/${pageNo}?limit=${limit}`,
+      `http://localhost:3000/expense/get-all-expenses/${pageNo}?limit=${limit}`,
       { headers: { Authorization: token } }
     );
 

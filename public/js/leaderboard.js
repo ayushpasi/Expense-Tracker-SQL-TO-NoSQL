@@ -1,7 +1,7 @@
 async function fetchLeaderboardData() {
   const token = localStorage.getItem("token");
   try {
-    const response = await axios.get("/premium/showLeaderBoard", {
+    const response = await axios.get("/premium/show-leader-board", {
       headers: { Authorization: token },
     });
     return response.data.userLeaderboardDetails;

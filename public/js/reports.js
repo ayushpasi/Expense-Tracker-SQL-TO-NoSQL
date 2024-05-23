@@ -23,7 +23,7 @@ async function getDailyReport(e) {
 
     let totalAmount = 0;
     const res = await axios.post(
-      " /premium/dailyReports",
+      " /premium/daily-report",
       {
         date: formattedDate,
       },
@@ -93,7 +93,7 @@ async function getMonthlyReport(e) {
 
     let totalAmount = 0;
     const res = await axios.post(
-      " /premium/monthlyReports",
+      " /premium/monthly-report",
       {
         month: formattedMonth,
       },

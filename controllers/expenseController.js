@@ -66,18 +66,7 @@ const addExpense = async (req, res, next) => {
     });
   }
 };
-//fetch all expenses
-// const getAllExpenses = async (req, res, next) => {
-//   try {
-//     const expenses = await ExpenseModel.find({ userId: req.user.id });
-//     console.log(expenses);
-//     res.status(200).json(expenses);
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).json({ error: "Failed to fetch expenses" });
-//   }
-// };
-//expenses pagination
+
 const getAllExpensesforPagination = async (req, res) => {
   try {
     const pageNo = parseInt(req.params.page);
@@ -106,7 +95,7 @@ const deleteExpense = async (req, res, next) => {
   session.startTransaction();
   try {
     const expenseId = req.params.id;
-    console.log(`DELETE ID ${expenseId}`);
+    // console.log(`DELETE ID ${expenseId}`);
     if (!expenseId) {
       await session.abortTransaction();
       session.endSession();
@@ -116,7 +105,7 @@ const deleteExpense = async (req, res, next) => {
     }
 
     const expense = await ExpenseModel.findById(expenseId).session(session);
-    console.log(`expense ${expense}`);
+    // console.log(`expense ${expense}`);
     if (!expense) {
       await session.abortTransaction();
       session.endSession();
@@ -173,7 +162,7 @@ const editExpense = async (req, res, next) => {
     const amount = req.body.expenseAmount;
     const userId = req.user._id;
     const expense = await ExpenseModel.findById(_id);
-    console.log(expense);
+    // console.log(expense);
     if (!expense) {
       return res.status(404).json({ message: "Expense not found" });
     }

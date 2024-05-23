@@ -40,7 +40,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use("/", userRouter);
 app.use("/user", userRouter);
-app.use("/homePage", expenseRouter);
+app.use("/home-page", expenseRouter);
 app.use("/expense", userauthentication.authenticate, expenseRouter);
 app.use("/purchase", purchaseMembershipRouter);
 app.use("/premium", premiumFeatureRouter);

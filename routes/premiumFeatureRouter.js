@@ -4,21 +4,24 @@ const premiumFeatureController = require("../controllers/premiumFeatureControlle
 const userauthentication = require("../middleware/authentication");
 
 router.get(
-  "/showLeaderBoard",
+  "/show-leader-board",
   userauthentication.authenticate,
   premiumFeatureController.getUserLeaderBoard
 );
-router.get("/getLeaderboardPage", premiumFeatureController.getLeaderboardPage);
+router.get(
+  "/get-leaderboard-page",
+  premiumFeatureController.getLeaderboardPage
+);
 
-router.get("/getReportsPage", premiumFeatureController.getReportsPage);
+router.get("/get-report-page", premiumFeatureController.getReportsPage);
 
 router.post(
-  "/dailyReports",
+  "/daily-report",
   userauthentication.authenticate,
   premiumFeatureController.dailyReports
 );
 router.post(
-  "/monthlyReports",
+  "/monthly-report",
   userauthentication.authenticate,
   premiumFeatureController.monthlyReports
 );

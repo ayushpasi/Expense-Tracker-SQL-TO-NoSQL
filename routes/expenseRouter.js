@@ -5,16 +5,15 @@ router.use(express.static("public"));
 
 router.get("/", expenseController.getHomePage);
 
-// router.get("/getAllExpenses", expenseController.getAllExpenses);
+router.post("/add-expense", expenseController.addExpense);
 
-router.delete("/deleteExpense/:id", expenseController.deleteExpense);
+router.delete("/delete-expense/:id", expenseController.deleteExpense);
 
-router.post("/addExpense", expenseController.addExpense);
+router.put("/edit-expense/:id", expenseController.editExpense);
 
 router.get(
-  "/getAllExpenses/:page",
+  "/get-all-expenses/:page",
   expenseController.getAllExpensesforPagination
 );
-router.put("/editExpense/:id", expenseController.editExpense);
 
 module.exports = router;

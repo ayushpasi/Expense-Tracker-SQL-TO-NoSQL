@@ -7,13 +7,13 @@ const userauthentication = require("../middleware/authentication");
 const router = express.Router();
 
 router.get(
-  "/premiumMembership",
+  "/premium-membership",
   userauthentication.authenticate,
   purchaseMembershipController.purchasepremium
 );
 
 router.post(
-  "/updateTransactionStatus",
+  "/update-transaction-status",
   userauthentication.authenticate,
   purchaseMembershipController.updateTransactionStatus
 );

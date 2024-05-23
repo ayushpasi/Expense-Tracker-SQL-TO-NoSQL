@@ -6,7 +6,7 @@ async function submitForm(event) {
   const password = document.getElementById("password").value;
 
   try {
-    const response = await axios.post("/user/signUp", {
+    const response = await axios.post("/user/sign-up", {
       name,
       email,
       password,
